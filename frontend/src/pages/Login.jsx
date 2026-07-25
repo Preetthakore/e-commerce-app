@@ -2,13 +2,16 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const ROLE_MAP = { buyer: "user", seller: "sales_person", admin: "admin" };
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginAs, setLoginAs] = useState("buyer");
   const [error, setError] = useState("");
-  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -16,62 +19,67 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
-      navigate("/");
+      const loggedInUser = await login(email, password);
+
+      if (loggedInUser.role !== ROLE_MAP[loginAs]) {
+        logout();
+        setError(`This account is not registered as a ${loginAs}. Please select the correct option.`);
+        setLoading(false);
+        return;
+      }
+
+      navigate("/products");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="container">
-      <div className="form-card" style={{ marginTop: 40 }}>
-        <h2>Welcome Back</h2>
-        <p className="text-center text-muted mb-16" style={{ fontSize: 14 }}>
-          Sign in to your ShopEasy account
-        </p>
+      <div className="form-card">
+        <h2>Login</h2>
         <form onSubmit={handleSubmit}>
+          <div className="flex gap-8">
+            {["buyer", "seller", "admin"].map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setLoginAs(opt)}
+                className={loginAs === opt ? "primary" : "secondary"}
+                style={{ flex: 1, textTransform: "capitalize" }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
           <div className="form-group">
             <label>Email</label>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="form-group">
             <label>Password</label>
             <div className="password-wrapper">
               <input
-                type={showPw ? "text" : "password"}
-                placeholder="Enter your password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPw(!showPw)}
-              >
-                {showPw ? "🙈" : "👁"}
+              <button type="button" className="password-toggle" onClick={() => setShowPassword((s) => !s)}>
+                {showPassword ? "🙈" : "👁"}
               </button>
             </div>
           </div>
-          {error && <p className="error">✕ {error}</p>}
-          <button className="primary" type="submit" disabled={loading} style={{ justifyContent: "center", padding: "12px" }}>
-            {loading ? <span className="spinner" /> : "Sign In"}
+          {error && <p className="error">{error}</p>}
+          <button className="primary" type="submit" disabled={loading}>
+            {loading ? <span className="spinner" /> : `Login as ${loginAs}`}
           </button>
         </form>
-        <p className="text-center mt-16" style={{ fontSize: 14, color: "var(--text-muted)" }}>
-          Don't have an account? <Link to="/register" style={{ color: "var(--primary)", fontWeight: 600 }}>Register</Link>
+        <p className="mt-16 text-center text-muted">
+          No account? <Link to="/register">Register as Buyer</Link>
         </p>
       </div>
     </div>
   );
 }
-

@@ -14,7 +14,7 @@ const signToken = (user) =>
 // @route  POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, password required" });
     }
@@ -22,12 +22,12 @@ router.post("/register", async (req, res) => {
     const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) return res.status(400).json({ message: "Email already registered" });
 
-    // Only allow "user" or "sales_person" self-signup; admin must be created manually/seeded.
-    // This prevents anyone from registering themselves as admin.
-    const safeRole = ["user", "sales_person"].includes(role) ? role : "user";
-
+    // Public self-registration always creates a buyer account.
+    // Sales Person and Admin accounts can only be created by an existing admin
+    // (see POST /api/users, admin-only) — this prevents anyone from granting
+    // themselves seller or admin privileges through the public sign-up form.
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email: email.toLowerCase(), password: hashed, role: safeRole });
+    const user = await User.create({ name, email: email.toLowerCase(), password: hashed, role: "user" });
 
     const token = signToken(user);
     res.status(201).json({

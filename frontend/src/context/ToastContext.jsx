@@ -2,39 +2,32 @@ import { createContext, useContext, useState, useCallback } from "react";
 
 const ToastContext = createContext(null);
 
-let toastId = 0;
-
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = "info", duration = 3500) => {
-    const id = ++toastId;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, duration);
+  const dismiss = (id) => setToasts((t) => t.filter((toast) => toast.id !== id));
+
+  // type: "success" | "error" | "info"
+  const showToast = useCallback((message, type = "success") => {
+    const id = Date.now() + Math.random();
+    setToasts((t) => [...t, { id, message, type }]);
+    setTimeout(() => dismiss(id), 2800);
   }, []);
 
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const toast = {
-    success: (msg, dur) => addToast(msg, "success", dur),
-    error: (msg, dur) => addToast(msg, "error", dur),
-    info: (msg, dur) => addToast(msg, "info", dur),
-  };
+  const icon = { success: "✓", error: "✕", info: "i" };
 
   return (
-    <ToastContext.Provider value={toast}>
+    <ToastContext.Provider value={{ showToast }}>
       {children}
       <div className="toast-container">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.type}`} onClick={() => removeToast(t.id)}>
-            <span className="toast-icon">
-              {t.type === "success" ? "✓" : t.type === "error" ? "✕" : "ℹ"}
-            </span>
-            <span className="toast-message">{t.message}</span>
+          <div
+            className={`toast toast-${t.type}`}
+            key={t.id}
+            onClick={() => dismiss(t.id)}
+          >
+            <span className="toast-icon">{icon[t.type]}</span>
+            {t.message}
           </div>
         ))}
       </div>
@@ -43,4 +36,3 @@ export function ToastProvider({ children }) {
 }
 
 export const useToast = () => useContext(ToastContext);
-
