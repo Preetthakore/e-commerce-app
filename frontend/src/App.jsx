@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProductList from "./pages/ProductList";
@@ -10,13 +10,21 @@ import Wishlist from "./pages/Wishlist";
 import Orders from "./pages/Orders";
 import SellerOrders from "./pages/SellerOrders";
 import AdminDashboard from "./pages/AdminDashboard";
+import { useAuth } from "./context/AuthContext";
+
+function Home() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="container">Loading...</div>;
+  return user ? <Navigate to="/products" /> : <Login />;
+}
 
 export default function App() {
   return (
     <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<ProductList />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/products" element={<ProductList />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
@@ -27,30 +35,30 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-       <Route
-  path="/cart"
-  element={
-    <ProtectedRoute roles={["user"]}>
-      <Cart />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/wishlist"
-  element={
-    <ProtectedRoute roles={["user"]}>
-      <Wishlist />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/orders"
-  element={
-    <ProtectedRoute roles={["user"]}>
-      <Orders />
-    </ProtectedRoute>
-  }
-/>
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute roles={["user"]}>
+              <Cart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wishlist"
+          element={
+            <ProtectedRoute roles={["user"]}>
+              <Wishlist />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute roles={["user"]}>
+              <Orders />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/seller-orders"
           element={
